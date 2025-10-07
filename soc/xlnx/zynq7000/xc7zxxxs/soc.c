@@ -16,43 +16,46 @@
 /* System Level Configuration Registers */
 #define SLCR_UNLOCK     0x0008
 #define SLCR_UNLOCK_KEY 0xdf0d
-#define AXI_GPIO_MMU_ENTRY(id)\
-	MMU_REGION_FLAT_ENTRY("axigpio",\
-			      DT_REG_ADDR(id),\
-			      DT_REG_SIZE(id),\
+#define AXI_GPIO_MMU_ENTRY(id)                                                                     \
+	MMU_REGION_FLAT_ENTRY("axigpio", DT_REG_ADDR(id), DT_REG_SIZE(id),                         \
 			      MT_DEVICE | MATTR_SHARED | MPERM_R | MPERM_W),
 
 static const struct arm_mmu_region mmu_regions[] = {
 
-	MMU_REGION_FLAT_ENTRY("vectors",
-			      0x00000000,
-			      0x1000,
+	MMU_REGION_FLAT_ENTRY("vectors", 0x00000000, 0x1000,
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_X),
-	MMU_REGION_FLAT_ENTRY("mpcore",
-			      0xF8F00000,
-			      0x2000,
+	MMU_REGION_FLAT_ENTRY("mpcore", 0xF8F00000, 0x2000,
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
-	MMU_REGION_FLAT_ENTRY("ocm",
-			      DT_REG_ADDR(DT_CHOSEN(zephyr_ocm)),
+	MMU_REGION_FLAT_ENTRY("ocm", DT_REG_ADDR(DT_CHOSEN(zephyr_ocm)),
 			      DT_REG_SIZE(DT_CHOSEN(zephyr_ocm)),
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
-	/* ARM Arch timer, GIC are covered by the MPCore mapping */
+/* ARM Arch timer, GIC are covered by the MPCore mapping */
+
+/* I2Cs */
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i2c0))
+	MMU_REGION_FLAT_ENTRY("i2c0", DT_REG_ADDR(DT_NODELABEL(i2c0)),
+			      DT_REG_SIZE(DT_NODELABEL(i2c0)),
+			      MT_DEVICE | MATTR_SHARED | MPERM_R | MPERM_W),
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i2c1))
+	MMU_REGION_FLAT_ENTRY("i2c1", DT_REG_ADDR(DT_NODELABEL(i2c1)),
+			      DT_REG_SIZE(DT_NODELABEL(i2c1)),
+			      MT_DEVICE | MATTR_SHARED | MPERM_R | MPERM_W),
+#endif
 
 /* GEMs */
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gem0))
-	MMU_REGION_FLAT_ENTRY("gem0",
-			      DT_REG_ADDR(DT_NODELABEL(gem0)),
+	MMU_REGION_FLAT_ENTRY("gem0", DT_REG_ADDR(DT_NODELABEL(gem0)),
 			      DT_REG_SIZE(DT_NODELABEL(gem0)),
 			      MT_DEVICE | MATTR_SHARED | MPERM_R | MPERM_W),
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gem1))
-	MMU_REGION_FLAT_ENTRY("gem1",
-			      DT_REG_ADDR(DT_NODELABEL(gem1)),
+	MMU_REGION_FLAT_ENTRY("gem1", DT_REG_ADDR(DT_NODELABEL(gem1)),
 			      DT_REG_SIZE(DT_NODELABEL(gem1)),
 			      MT_DEVICE | MATTR_SHARED | MPERM_R | MPERM_W),
 #endif
 
-DT_FOREACH_STATUS_OKAY(xlnx_xps_gpio_1_00_a, AXI_GPIO_MMU_ENTRY)
+	DT_FOREACH_STATUS_OKAY(xlnx_xps_gpio_1_00_a, AXI_GPIO_MMU_ENTRY)
 
 };
 
