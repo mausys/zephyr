@@ -38,6 +38,20 @@ static const struct arm_mmu_region mmu_regions[] = {
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
 	/* ARM Arch timer, GIC are covered by the MPCore mapping */
 
+/* I2Cs */
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i2c0))
+	MMU_REGION_FLAT_ENTRY("i2c0",
+			      DT_REG_ADDR(DT_NODELABEL(i2c0)),
+			      DT_REG_SIZE(DT_NODELABEL(i2c0)),
+			      MT_DEVICE | MATTR_SHARED | MPERM_R | MPERM_W),
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i2c1))
+	MMU_REGION_FLAT_ENTRY("i2c1",
+			      DT_REG_ADDR(DT_NODELABEL(i2c1)),
+			      DT_REG_SIZE(DT_NODELABEL(i2c1)),
+			      MT_DEVICE | MATTR_SHARED | MPERM_R | MPERM_W),
+#endif
+
 /* GEMs */
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gem0))
 	MMU_REGION_FLAT_ENTRY("gem0",
