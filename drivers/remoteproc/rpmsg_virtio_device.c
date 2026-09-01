@@ -25,11 +25,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(rpmsg_vdev, CONFIG_RPROC_LOG_LEVEL);
 
-struct carveout_region {
-	metal_phys_addr_t pa;
-	struct metal_io_region region;
-};
-
 struct rvdev_config {
 	struct mbox_dt_spec mbox_tx;
 	struct mbox_dt_spec mbox_rx;
@@ -46,9 +41,9 @@ struct rvdev_data {
 	struct k_sem sem;
 	k_timeout_t poll_time;
 	struct metal_io_region mr_rsc_table;
-	struct carveout_region cr_vring_tx;
-	struct carveout_region cr_vring_rx;
-	struct carveout_region cr_buffer;
+	struct metal_io_region mr_vring_tx;
+	struct metal_io_region mr_vring_rx;
+	struct metal_io_region mr_buffer;
 
 	K_KERNEL_STACK_MEMBER(stack, CONFIG_RPMSG_VDEV_THREAD_STACK_SIZE);
 };
@@ -96,21 +91,6 @@ static void rvdev_rx_thread(void *dev_ptr, void *p2, void *p3)
 	}
 }
 
-static int carveout_region_init(struct carveout_region *co_region, const char *name)
-{
-	const struct fw_rsc_carveout *carveout = z_rproc_get_carveout_by_name(name);
-
-	if (!carveout) {
-		LOG_ERR("carvout %s not found", name);
-		return -ENOENT;
-	}
-
-	co_region->pa = carveout->pa;
-
-	metal_io_init(&co_region->region, (void *)carveout->da, &co_region->pa, carveout->len, -1,
-		      carveout->flags, NULL);
-	return 0;
-}
 
 static int rvdev_init(const struct device *dev)
 {

@@ -20,7 +20,7 @@ extern "C" {
 /* Forward declarations for OpenAMP resource structures */
 struct fw_rsc_carveout;
 struct fw_rsc_vdev;
-
+struct metal_io_region;
 #ifdef CONFIG_OPENAMP_RPMSG_VDEV
 struct rpmsg_device;
 #endif
@@ -48,7 +48,7 @@ void *z_rproc_rsc_table(size_t *size);
  *
  * @return Pointer to the carveout resource, or NULL if not found.
  */
-struct fw_rsc_carveout *z_rproc_get_carveout_by_name(const char *name);
+int z_rproc_init_carveout_region(struct metal_io_region *region, const char *name);
 
 /**
  * @brief Get carveout resource by index
