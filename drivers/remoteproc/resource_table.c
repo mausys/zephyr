@@ -99,24 +99,27 @@ __attribute__((__section__(DT_PROP(VDEV_NODE, resource_table)))))
 		.flags = 0,                                                                        \
 		.name = DT_PROP_BY_PHANDLE_IDX(node_id, carveouts, idx, zephyr_memory_region)},
 
-#define VRING_CARVEOUT_ENTRY(node_id, prop, idx_vring, idx_vdev, ...)                              \
-	(struct fw_rsc_carveout){.type = RSC_CARVEOUT,                                             \
+#define VRING_CARVEOUT_ENTRY(node_id, prop, idx_vring, idx_vdev, ...)  \
+        IF_ENABLED(IS_ENABLED(DT_PHANDLE_BY_IDX(node_id, prop, idx_vdev), memory_region),                    \
+	((struct fw_rsc_carveout){.type = RSC_CARVEOUT,                                             \
 				 .da = DT_REG_ADDR(DT_PROP_BY_PHANDLE_IDX(                         \
 					 node_id, prop, idx_vring, memory_region)),                \
 				 .pa = DT_REG_ADDR(DT_PROP_BY_PHANDLE_IDX(                         \
 					 node_id, prop, idx_vring, memory_region)),                \
 				 .len = DT_REG_SIZE(DT_PROP_BY_PHANDLE_IDX(                        \
 					 node_id, prop, idx_vring, memory_region)),                \
-				 .name = STRINGIFY(DT_CAT4(vdev, idx_vdev, vring, idx_vring))},
+				 .name = STRINGIFY(DT_CAT4(vdev, idx_vdev, vring, idx_vring))},)
 
 #define COLLECT_CARVEOUT_ENTRIES(node_id, prop, idx_vdev)                                          \
-	(struct fw_rsc_carveout){                                                                  \
-		.type = RSC_CARVEOUT,                                                              \
-		.da = DT_REG_ADDR(DT_PROP_BY_PHANDLE_IDX(node_id, prop, idx_vdev, memory_region)), \
+	IF_ENABLED(IS_ENABLED(DT_PHANDLE_BY_IDX(node_id, prop, idx_vdev), memory_region),         \
+	((struct fw_rsc_carveout){                                                                  \
+		.type = RSC_CARVEOUT,      \
+		(.da = DT_REG_ADDR(DT_PROP_BY_PHANDLE_IDX(node_id, prop, idx_vdev, memory_region)), \
 		.pa = DT_REG_ADDR(DT_PROP_BY_PHANDLE_IDX(node_id, prop, idx_vdev, memory_region)), \
 		.len = DT_REG_SIZE(                                                                \
 			DT_PROP_BY_PHANDLE_IDX(node_id, prop, idx_vdev, memory_region)),           \
-		.name = STRINGIFY(DT_CAT3(vdev, idx_vdev, buffer))},                                 \
+		) \
+		.name = STRINGIFY(DT_CAT3(vdev, idx_vdev, buffer))},)	\
 		DT_FOREACH_PROP_ELEM_VARGS(DT_PHANDLE_BY_IDX(node_id, prop, idx_vdev), vrings,     \
 					   VRING_CARVEOUT_ENTRY, idx_vdev)
 
@@ -168,9 +171,10 @@ struct fw_resource_table {
 		},
 
 #if NUM_CARVEOUTS > 0
-	.carveouts = {DT_FOREACH_PROP_ELEM(RESOURCE_TABLE_NODE, carveouts, CARVEOUT_ENTRY)
+	.carveouts = {
 			      DT_FOREACH_PROP_ELEM(RESOURCE_TABLE_NODE, vdevs,
-						   COLLECT_CARVEOUT_ENTRIES)},
+						   COLLECT_CARVEOUT_ENTRIES)
+				DT_FOREACH_PROP_ELEM(RESOURCE_TABLE_NODE, carveouts, CARVEOUT_ENTRY)},
 #endif
 	DT_FOREACH_PROP_ELEM(RESOURCE_TABLE_NODE, vdevs, VDEV_ENTRY)
 

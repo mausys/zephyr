@@ -23,7 +23,6 @@ properties:
 
   memory-region:
     type: phandle
-    required: true
     description: |
       Phandle to the shared memory region used for RPMsg buffers.
 

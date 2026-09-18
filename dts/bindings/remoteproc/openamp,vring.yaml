@@ -22,7 +22,6 @@ properties:
 
   memory-region:
     type: phandle
-    required: true
     description: |
       Phandle to the shared memory region used to store the vring
       descriptors, available ring, and used ring.
