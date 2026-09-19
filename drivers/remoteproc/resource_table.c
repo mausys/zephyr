@@ -53,15 +53,15 @@ __attribute__((__section__(DT_PROP(VDEV_NODE, resource_table)))))
 
 
 
-#define SUMMAND_VDEV_VRING_CARVEOUT(node_vring) \
-		IF_ENABLED(DT_NODE_HAS_PROP(node_vring, memory_region), (+ 1))
 		
-#define SUMMAND_VDEV_BUFFER_CARVEOUT(node_vdev) \
-	COND_CODE_1(DT_NODE_HAS_PROP(node_vdev, memory_region), (1), (0))
-	
+#define SUMMAND_CARVEOUT(node_vring) \
+		IF_ENABLED(DT_NODE_HAS_PROP(node_vring, memory_region), (+ 1))
+
+#define SUMMAND_USER_DEFINED_CARVEOUT(node_rsc_table) \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_rsc_table, carveouts), (DT_PROP_LEN(node_rsc_table, carveouts)), (0))	
 	
 #define ADD_VDEV_VRING_CARVEOUT(node_vring, prop, idx_vring, dummy, ...)  \
-	SUMMAND_VDEV_VRING_CARVEOUT(DT_PHANDLE_BY_IDX(node_vring, prop, idx_vring))
+	SUMMAND_CARVEOUT(DT_PHANDLE_BY_IDX(node_vring, prop, idx_vring))
 
 /*
  * Can't use DT_FOREACH_PROP_ELEM twice, so use DT_FOREACH_PROP_ELEM_VARGS
@@ -73,13 +73,11 @@ __attribute__((__section__(DT_PROP(VDEV_NODE, resource_table)))))
 
 
 #define COUNT_VDEV_CARVEOUTS(node_vdev, prop, idx_vdev)  \
-		SUMMAND_VDEV_BUFFER_CARVEOUT(DT_PHANDLE_BY_IDX(node_vdev, prop, idx_vdev)) \
+		SUMMAND_CARVEOUT(DT_PHANDLE_BY_IDX(node_vdev, prop, idx_vdev)) \
 		COUNT_VDEV_VRINGS_CARVEOUTS(DT_PHANDLE_BY_IDX(node_vdev, prop, idx_vdev))				   
 
 
-#define COUNT_CARVEOUTS (DT_FOREACH_PROP_ELEM(RESOURCE_TABLE_NODE, vdevs, COUNT_VDEV_CARVEOUTS))
-
-
+#define COUNT_CARVEOUTS (SUMMAND_USER_DEFINED_CARVEOUT(RESOURCE_TABLE_NODE) DT_FOREACH_PROP_ELEM(RESOURCE_TABLE_NODE, vdevs, COUNT_VDEV_CARVEOUTS))
 
 
 #define VDEV_INDEX(idx) vdev_##idx
@@ -108,6 +106,7 @@ __attribute__((__section__(DT_PROP(VDEV_NODE, resource_table)))))
 		DT_FOREACH_PROP_ELEM_VARGS(DT_PHANDLE_BY_IDX(node_id, prop, idx), vrings,          \
 					   VRING_ENTRY)},
 
+
 #define VDEV_FIELD(node_id, prop, idx)                                                             \
 	struct {                                                                                   \
 		struct fw_rsc_vdev vdev;                                                           \
@@ -115,11 +114,8 @@ __attribute__((__section__(DT_PROP(VDEV_NODE, resource_table)))))
 			vrings[DT_PROP_LEN(DT_PHANDLE_BY_IDX(node_id, prop, idx), vrings)];        \
 	} vdev_##idx;
 
-
-
 	
 #define CARVEOUT_ENTRY(reg, carveout_name)    \
-	( \
 		(struct fw_rsc_carveout) {  \
 		.type = RSC_CARVEOUT,  \
 		.da = DT_REG_ADDR(reg),      \
@@ -127,13 +123,12 @@ __attribute__((__section__(DT_PROP(VDEV_NODE, resource_table)))))
 		.len = DT_REG_SIZE(reg),   \
 		.flags = 0,  \
 		.name = carveout_name }, \
-	)
 		
 
-#define COND_CARVEOUT_ENTRY(phandle, carveout_name)    \
+#define COND_CARVEOUT_ENTRY(node, carveout_name)    \
 	IF_ENABLED(                          \
-		DT_NODE_HAS_PROP(phandle, memory_region),         \
-		CARVEOUT_ENTRY(DT_PROP(phandle, memory_region), carveout_name))
+		DT_NODE_HAS_PROP(node, memory_region),         \
+		(CARVEOUT_ENTRY(DT_PROP(node, memory_region), carveout_name)))
 	
 #define VDEV_VRING_CARVEOUT_NAME(idx_vdev, idx_vring)  \ 
 	STRINGIFY(DT_CAT4(vdev, idx_vdev, vring, idx_vring))
@@ -143,7 +138,7 @@ __attribute__((__section__(DT_PROP(VDEV_NODE, resource_table)))))
 
 
 #define VDEV_VRING_CARVEOUT_ENTRY(node_vring, prop, idx_vring, idx_vdev, ...)  \
-	COND_CARVEOUT_ENTRY(DT_PHANDLE_BY_IDX(node_vring, prop, idx_vdev), VDEV_VRING_CARVEOUT_NAME(idx_vdev, idx_vring))
+	COND_CARVEOUT_ENTRY(DT_PHANDLE_BY_IDX(node_vring, prop, idx_vring), VDEV_VRING_CARVEOUT_NAME(idx_vdev, idx_vring))
 
 #define VDEV_BUFFER_CARVEOUT_ENTRY(node_vdev, prop, idx_vdev)  \
 	COND_CARVEOUT_ENTRY(DT_PHANDLE_BY_IDX(node_vdev, prop, idx_vdev), VDEV_BUFFER_CARVEOUT_NAME(idx_vdev))
@@ -153,7 +148,7 @@ __attribute__((__section__(DT_PROP(VDEV_NODE, resource_table)))))
 	DT_FOREACH_PROP_ELEM_VARGS(DT_PHANDLE_BY_IDX(node_vdev, prop, idx_vdev), vrings,     \
 					   VDEV_VRING_CARVEOUT_ENTRY, idx_vdev)
 
-#define CARVEOUT_ENTRY_ITER(node_id, prop, idx)   CARVEOUT_ENTRY(DT_PHANDLE_BY_IDX(node_id, prop, idx), DT_PROP_BY_PHANDLE_IDX(node_id, carveouts, idx, zephyr_memory_region))
+#define USER_DEFINED_CARVEOUTS(node_id, prop, idx)   CARVEOUT_ENTRY(DT_PHANDLE_BY_IDX(node_id, prop, idx), DT_PROP_BY_PHANDLE_IDX(node_id, carveouts, idx, zephyr_memory_region))
 
 #define FOREACH_CARVEOUT(fn)
 #define CARVEOUT_ENTRIES FOREACH_CARVEOUT(CARVEOUT_ENTRY_ITER)
@@ -202,11 +197,10 @@ struct fw_resource_table {
 #endif
 		},
 
-#if NUM_CARVEOUTS > 0
+#if COUNT_CARVEOUTS > 0
 	.carveouts = {
-			      DT_FOREACH_PROP_ELEM(RESOURCE_TABLE_NODE, vdevs,
-						   VDEV_CARVEOUT_ENTRIES)
-				//DT_FOREACH_PROP_ELEM(RESOURCE_TABLE_NODE, carveouts, CARVEOUT_ENTRY_ITER)
+			     DT_FOREACH_PROP_ELEM(RESOURCE_TABLE_NODE, vdevs, VDEV_CARVEOUT_ENTRIES)
+				DT_FOREACH_PROP_ELEM(RESOURCE_TABLE_NODE, carveouts, USER_DEFINED_CARVEOUTS)
 			},
 #endif
 	DT_FOREACH_PROP_ELEM(RESOURCE_TABLE_NODE, vdevs, VDEV_ENTRY)
